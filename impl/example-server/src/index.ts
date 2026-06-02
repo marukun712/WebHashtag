@@ -1,11 +1,15 @@
 import { staticPlugin } from "@elysia/static";
 import * as ed from "@noble/ed25519";
+import { sha512 } from "@noble/hashes/sha2.js";
 import { Elysia } from "elysia";
 import { base58btc } from "multiformats/bases/base58";
 import { z } from "zod";
 import { addEntry, hasEntry } from "./db";
 import { startRevalidation } from "./revalidate";
 import { fetchOgp, verifyBacklink } from "./verify";
+
+// @ts-expect-error
+ed.hashes.sha512 = sha512;
 
 const SERVER_HOST = process.env.SERVER_HOST ?? "localhost:3000";
 const SERVER_NAME = process.env.SERVER_NAME ?? "Example Tag Server";
