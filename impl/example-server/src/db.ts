@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { buildAtomFeed } from "./atom";
 
 type OgpData = {
@@ -15,6 +16,36 @@ export type Entry = {
 type TagStore = Map<string, Map<string, Entry>>;
 
 const store: TagStore = new Map();
+
+const persistedTagSchema = z.object({
+	tag: z.string(),
+	entries: z.array(
+		z.object({
+			url: z.string(),
+			registeredAt: z.string(),
+			ogp: z.object({
+				title: z.string().nullable(),
+				description: z.string().nullable(),
+				image: z.string().nullable(),
+			}),
+		}),
+	),
+});
+
+export async function loadFromFiles(): Promise<void> {
+	const glob = new Bun.Glob("public/tag/*.json");
+	for await (const file of glob.scan(".")) {
+		const text = await Bun.file(file).text();
+		const result = persistedTagSchema.safeParse(JSON.parse(text));
+		if (!result.success) continue;
+		const { tag, entries } = result.data;
+		const tagMap = new Map<string, Entry>();
+		for (const entry of entries) {
+			tagMap.set(entry.url, entry);
+		}
+		store.set(tag, tagMap);
+	}
+}
 
 export function getEntries(tag: string): Entry[] {
 	const tagMap = store.get(tag);

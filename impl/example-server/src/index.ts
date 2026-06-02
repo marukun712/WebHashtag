@@ -2,9 +2,11 @@ import { staticPlugin } from "@elysia/static";
 import * as ed from "@noble/ed25519";
 import { sha512 } from "@noble/hashes/sha2.js";
 import { Elysia } from "elysia";
+// https://github.com/sindresorhus/is-ip
+import { isIP } from "is-ip";
 import { base58btc } from "multiformats/bases/base58";
 import { z } from "zod";
-import { addEntry, hasEntry } from "./db";
+import { addEntry, hasEntry, loadFromFiles } from "./db";
 import { startRevalidation } from "./revalidate";
 import { fetchOgp, verifyBacklink } from "./verify";
 
@@ -34,6 +36,8 @@ if (MODE === "closed") {
 	publicKeyEncoded = base58btc.encode(ed.getPublicKey(key));
 }
 
+await loadFromFiles();
+
 await Bun.write(
 	"public/.well-known/webhashtag.json",
 	JSON.stringify(
@@ -50,9 +54,14 @@ await Bun.write(
 
 startRevalidation(SERVER_HOST);
 
+const safeUrl = z.url().refine((val) => {
+	const host = new URL(val).hostname;
+	return !isIP(host) && host !== "localhost";
+}, "IP address URLs are not allowed");
+
 const tokenSchema = z.object({
-	url: z.url(),
-	tag: z.string(),
+	url: safeUrl,
+	tag: z.string().regex(/^[a-zA-Z0-9_-]+$/),
 	server: z.string(),
 	exp: z.iso.datetime(),
 	sig: z.string(),
@@ -67,6 +76,12 @@ app.get(
 	"/tag/:tag",
 	async ({ params, query, request, set }) => {
 		const { tag } = params;
+
+		if (!/^[a-zA-Z0-9_-]+$/.test(tag)) {
+			set.status = 400;
+			return { error: "Invalid tag" };
+		}
+
 		const referer = request.headers.get("referer");
 
 		if (!referer) {
@@ -74,13 +89,12 @@ app.get(
 			return { error: "Referer header is required" };
 		}
 
-		let articleUrl: string;
-		try {
-			articleUrl = new URL(referer).href;
-		} catch {
+		const refererResult = safeUrl.safeParse(referer);
+		if (!refererResult.success) {
 			set.status = 400;
 			return { error: "Invalid Referer" };
 		}
+		const articleUrl = refererResult.data;
 
 		if (MODE === "closed") {
 			const { token } = query;
