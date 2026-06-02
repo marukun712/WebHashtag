@@ -65,12 +65,13 @@ WebHashtagは、ハッシュタグの仕組みをWeb全体に応用するプロ�
 タグサーバーは以下のエンドポイントを公開する必要があります:
 
 ```
-GET /tag/{タグ名}            — 記事一覧（HTML）
 GET /tag/{タグ名}.json       — 記事一覧（JSON）
 GET /feed/{タグ名}.atom      — 記事一覧（Atomフィード）
 ```
 
 ### JSONレスポンス形式
+
+バック検証の際にOGPメタデータが取得できた場合、タグサーバーはその情報を記録・返却することが**推奨**されます。
 
 ```json
 {
@@ -79,7 +80,12 @@ GET /feed/{タグ名}.atom      — 記事一覧（Atomフィード）
   "entries": [
     {
       "url": "https://blog.example.org/posts/ts-tips",
-      "registeredAt": "2026-06-02T12:00:00Z"
+      "registeredAt": "2026-06-02T12:00:00Z",
+      "ogp": {
+        "title": "TypeScriptの型システム入門",
+        "description": "TypeScriptの型システムについて解説します。",
+        "image": "https://blog.example.org/posts/ts-tips/ogp.png"
+      }
     }
   ]
 }
@@ -117,13 +123,15 @@ GET /.well-known/webhashtag.json
 ```json
 {
   "mode": "closed",
-  "publicKey": "<base64エンコードされたEd25519公開鍵>"
+  "publicKey": "<base58btcエンコードされたEd25519公開鍵>"
 }
 ```
 
 ### トークンの発行
 
-著者はタグサーバーに対して認証（任意の標準的なWeb認証方式）を行い、記事に対する署名済みトークンを発行してもらいます:
+著者はタグサーバーに対して認証（任意の標準的なWeb認証方式）を行い、記事に対する署名済みトークンを発行してもらいます。
+
+トークンは以下のJSONをEd25519で署名したものです:
 
 ```json
 {
@@ -137,12 +145,20 @@ GET /.well-known/webhashtag.json
 
 トークンは特定の `url` に束縛されており、別のページへの転用はできません。
 
+### トークンのエンコード
+
+URLクエリパラメーターとして渡すため、トークンJSONをbase58btcエンコードして使用します:
+
+```
+{url, tag, server, exp, sig} → JSONシリアライズ → base58btcエンコード → ?token=<値>
+```
+
 ### トークンを使った登録
 
-著者はトークンをタグリンクに含めます:
+著者はエンコードされたトークンをタグリンクに含めます:
 
 ```html
-<a href="https://tag.example.com/tag/typescript?token=<トークン>">TypeScript</a>
+<a href="https://tag.example.com/tag/typescript?token=<base58btcエンコードされたトークン>">TypeScript</a>
 ```
 
 リクエストを受信したタグサーバーは以下をすべて検証します:

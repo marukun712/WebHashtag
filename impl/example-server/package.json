@@ -6,8 +6,14 @@
 		"dev": "bun run --watch src/index.ts"
 	},
 	"dependencies": {
+		"@elysia/static": "^1.4.11",
 		"@noble/ed25519": "npm:@jsr/noble__ed25519",
-		"elysia": "latest"
+		"@noble/hashes": "npm:@jsr/noble__hashes",
+		"elysia": "latest",
+		"feed": "^5.2.1",
+		"multiformats": "^14.0.0",
+		"ogp-parser": "^0.8.1",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"bun-types": "latest"
