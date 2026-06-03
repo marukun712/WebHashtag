@@ -16,6 +16,11 @@ ed.hashes.sha512 = sha512;
 const SERVER_HOST = process.env.SERVER_HOST ?? "localhost:3000";
 const SERVER_NAME = process.env.SERVER_NAME ?? "Example Tag Server";
 const MODE = (process.env.MODE ?? "open") as "open" | "closed";
+const TAGS: string[] | null = process.env.TAGS
+	? process.env.TAGS.split(",")
+			.map((t) => t.trim())
+			.filter((t) => t.length > 0)
+	: null;
 
 let secretKey: Uint8Array | null = null;
 let publicKeyEncoded: string | null = null;
@@ -46,6 +51,7 @@ await Bun.write(
 			name: SERVER_NAME,
 			mode: MODE,
 			publicKey: publicKeyEncoded,
+			tags: TAGS,
 		},
 		null,
 		2,
@@ -74,7 +80,7 @@ app.use(await staticPlugin({ assets: "public", prefix: "" }));
 
 app.get(
 	"/tag/:tag",
-	async ({ params, query, request, set }) => {
+	async ({ params, query, set }) => {
 		const { tag } = params;
 
 		if (!/^[a-zA-Z0-9_-]+$/.test(tag)) {
@@ -82,19 +88,17 @@ app.get(
 			return { error: "Invalid tag" };
 		}
 
-		const referer = request.headers.get("referer");
-
-		if (!referer) {
-			set.status = 400;
-			return { error: "Referer header is required" };
+		if (TAGS !== null && !TAGS.includes(tag)) {
+			set.status = 404;
+			return { error: "Tag not found" };
 		}
 
-		const refererResult = safeUrl.safeParse(referer);
-		if (!refererResult.success) {
+		const urlResult = safeUrl.safeParse(query.url);
+		if (!urlResult.success) {
 			set.status = 400;
-			return { error: "Invalid Referer" };
+			return { error: "Invalid url parameter" };
 		}
-		const articleUrl = refererResult.data;
+		const articleUrl = urlResult.data;
 
 		if (MODE === "closed") {
 			const { token } = query;
@@ -125,7 +129,7 @@ app.get(
 
 			if (parsed.url !== articleUrl) {
 				set.status = 401;
-				return { error: "Token URL does not match Referer" };
+				return { error: "Token URL does not match url parameter" };
 			}
 
 			const { sig, ...rest } = parsed;
@@ -145,7 +149,7 @@ app.get(
 
 		if (hasEntry(tag, articleUrl)) {
 			set.status = 302;
-			set.headers.Location = referer;
+			set.headers.Location = articleUrl;
 			return null;
 		}
 
@@ -160,11 +164,14 @@ app.get(
 		await addEntry(tag, articleUrl, SERVER_HOST, ogp);
 
 		set.status = 302;
-		set.headers.Location = referer;
+		set.headers.Location = articleUrl;
 		return null;
 	},
 	{
-		query: z.object({ token: z.string().optional() }),
+		query: z.object({
+			url: z.string(),
+			token: z.string().optional(),
+		}),
 	},
 );
 
