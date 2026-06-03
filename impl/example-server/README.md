@@ -11,6 +11,7 @@ SERVER_HOST=localhost:3000   # サーバーのホスト名(ポート含む)
 SERVER_NAME=Example Tag Server
 MODE=open                    # "open" または "closed"
 SECRET_KEY=                  # MODE=closed の場合のみ必要
+TAGS=typescript,javascript   # 許可するタグ名をカンマ区切りで指定(必須)
 ```
 
 `MODE=closed` の場合、`SECRET_KEY` を空のまま一度起動するとキーが生成されてログに出力されます。それを `.env` に設定してください。
@@ -27,5 +28,7 @@ bun run dev
 ## トークン発行 (closedモード)
 
 ```bash
-bun run scripts/issue-token.ts <url> <tag>
+bun scripts/issue-token.ts <url> <tag> [expDays]
 ```
+
+`SECRET_KEY` 環境変数が必要です。`expDays` は省略可能で、デフォルトは7日です。

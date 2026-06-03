@@ -16,11 +16,13 @@ ed.hashes.sha512 = sha512;
 const SERVER_HOST = process.env.SERVER_HOST ?? "localhost:3000";
 const SERVER_NAME = process.env.SERVER_NAME ?? "Example Tag Server";
 const MODE = (process.env.MODE ?? "open") as "open" | "closed";
-const TAGS: string[] | null = process.env.TAGS
-	? process.env.TAGS.split(",")
-			.map((t) => t.trim())
-			.filter((t) => t.length > 0)
-	: null;
+if (!process.env.TAGS) {
+	console.error("TAGS env var is required");
+	process.exit(1);
+}
+const TAGS: string[] = process.env.TAGS.split(",")
+	.map((t) => t.trim())
+	.filter((t) => t.length > 0);
 
 let secretKey: Uint8Array | null = null;
 let publicKeyEncoded: string | null = null;
@@ -88,7 +90,7 @@ app.get(
 			return { error: "Invalid tag" };
 		}
 
-		if (TAGS !== null && !TAGS.includes(tag)) {
+		if (!TAGS.includes(tag)) {
 			set.status = 404;
 			return { error: "Tag not found" };
 		}
