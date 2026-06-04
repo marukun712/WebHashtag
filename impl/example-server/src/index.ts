@@ -160,9 +160,7 @@ app.get(
 		}
 
 		if (hasEntry(tag, articleUrl)) {
-			set.status = 302;
-			set.headers.Location = articleUrl;
-			return null;
+			return { status: "already registered" };
 		}
 
 		const tagUrl = `https://${SERVER_HOST}/declare/${tag}`;
@@ -175,9 +173,7 @@ app.get(
 		const ogp = await fetchOgp(articleUrl);
 		await addEntry(tag, articleUrl, SERVER_HOST, ogp);
 
-		set.status = 302;
-		set.headers.Location = articleUrl;
-		return null;
+		return { status: "registered" };
 	},
 	{
 		query: z.object({
