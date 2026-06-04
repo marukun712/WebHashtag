@@ -139,6 +139,11 @@ app.get(
 				return { error: "Token tag does not match requested tag" };
 			}
 
+			if (parsed.server !== SERVER_HOST) {
+				set.status = 401;
+				return { error: "Token server does not match this server" };
+			}
+
 			const { sig, ...rest } = parsed;
 			const message = new TextEncoder().encode(JSON.stringify(rest));
 			const sigBytes = base58btc.decode(sig);
