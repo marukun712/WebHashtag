@@ -129,7 +129,7 @@ app.get(
 				return { error: "Token expired" };
 			}
 
-			if (parsed.url !== articleUrl) {
+			if (new URL(parsed.url).href !== new URL(articleUrl).href) {
 				set.status = 401;
 				return { error: "Token URL does not match url parameter" };
 			}
