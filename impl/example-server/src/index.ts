@@ -134,6 +134,11 @@ app.get(
 				return { error: "Token URL does not match url parameter" };
 			}
 
+			if (parsed.tag !== tag) {
+				set.status = 401;
+				return { error: "Token tag does not match requested tag" };
+			}
+
 			const { sig, ...rest } = parsed;
 			const message = new TextEncoder().encode(JSON.stringify(rest));
 			const sigBytes = base58btc.decode(sig);
