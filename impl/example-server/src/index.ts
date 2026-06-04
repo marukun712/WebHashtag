@@ -1,4 +1,3 @@
-import { staticPlugin } from "@elysia/static";
 import * as ed from "@noble/ed25519";
 import { sha512 } from "@noble/hashes/sha2.js";
 import { Elysia } from "elysia";
@@ -77,8 +76,40 @@ const tokenSchema = z.object({
 
 const app = new Elysia();
 
-// https://elysiajs.com/plugins/static
-app.use(await staticPlugin({ assets: "public", prefix: "" }));
+app.get("/.well-known/webhashtag.json", async () => {
+	const file = Bun.file("public/.well-known/webhashtag.json");
+	return new Response(file);
+});
+
+app.get("/feed/:tag", async ({ params, set }) => {
+	const { tag } = params;
+	if (!/^[a-zA-Z0-9_-]+$/.test(tag)) {
+		set.status = 400;
+		return { error: "Invalid tag" };
+	}
+	const file = Bun.file(`public/feed/${tag}.atom`);
+	if (!(await file.exists())) {
+		set.status = 404;
+		return { error: "Tag not found" };
+	}
+	set.headers["cache-control"] = "no-store";
+	return new Response(file);
+});
+
+app.get("/tag/:tag", async ({ params, set }) => {
+	const { tag } = params;
+	if (!/^[a-zA-Z0-9_-]+$/.test(tag)) {
+		set.status = 400;
+		return { error: "Invalid tag" };
+	}
+	const file = Bun.file(`public/tag/${tag}.json`);
+	if (!(await file.exists())) {
+		set.status = 404;
+		return { error: "Tag not found" };
+	}
+	set.headers["cache-control"] = "no-store";
+	return new Response(file);
+});
 
 app.get(
 	"/declare/:tag",
