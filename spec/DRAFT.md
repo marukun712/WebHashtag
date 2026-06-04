@@ -17,8 +17,8 @@ WebHashtagは、ハッシュタグの仕組みをWeb全体に応用するプロ�
 
 ハッシュタグを管理し、各タグに登録された記事一覧を保持するサーバーです。
 
-- タグURLは `{サーバー}/tag/{タグ名}` の形式に従います
-  - 例: `tag.example.com/tag/typescript`
+- タグURLは `{サーバー}/declare/{タグ名}` の形式に従います
+  - 例: `tag.example.com/declare/typescript`
 - タグ名に使用できる文字は `[a-zA-Z0-9_-]+` です
 - タグサーバーはUIではなく機械可読なAPIを公開します
 - 同じタグ名を持つタグサーバーが複数存在してもかまいません
@@ -35,7 +35,7 @@ WebHashtagは、ハッシュタグの仕組みをWeb全体に応用するプロ�
 
 1. 著者が記事にタグサーバーへのリンクを追加します。
    ```html
-   <a href="https://tag.example.com/tag/typescript?url=https://blog.example.org/posts/ts-tips">#TypeScript</a>
+   <a href="https://tag.example.com/declare/typescript?url=https://blog.example.org/posts/ts-tips">#TypeScript</a>
    ```
 2. 著者 (または訪問者) がそのリンクを一度クリックします。
 3. タグサーバーが `url` クエリパラメーターから記事URLを取得します。
@@ -52,8 +52,8 @@ WebHashtagは、ハッシュタグの仕組みをWeb全体に応用するプロ�
 複数のタグサーバーに登録したい場合、著者は複数のリンクを記事に含めるだけです。
 
 ```html
-<a href="https://tag.example.com/tag/typescript?url=https://blog.example.org/posts/ts-tips">#TypeScript</a>
-<a href="https://tag.example.net/tag/typescript?url=https://blog.example.org/posts/ts-tips">#TypeScript</a>
+<a href="https://tag.example.com/declare/typescript?url=https://blog.example.org/posts/ts-tips">#TypeScript</a>
+<a href="https://tag.example.net/declare/typescript?url=https://blog.example.org/posts/ts-tips">#TypeScript</a>
 ```
 
 アグリゲーターは各タグサーバーのAPIを個別に叩くことで、複数サーバーをまたいだ記事収集ができます。
@@ -65,12 +65,12 @@ WebHashtagは、ハッシュタグの仕組みをWeb全体に応用するプロ�
 タグサーバーは以下のエンドポイントを公開する必要があります。
 
 ```
-GET /tag/{タグ名}?url={記事URL}   - 登録トリガー (記事からリンクされるURL)
-GET /tag/{タグ名}.json            - 記事一覧 (JSON)
-GET /feed/{タグ名}.atom           - 記事一覧 (Atomフィード)
+GET /declare/{タグ名}?url={記事URL}   - 登録トリガー (記事からリンクされるURL)
+GET /tag/{タグ名}.json                - 記事一覧 (JSON)
+GET /feed/{タグ名}.atom               - 記事一覧 (Atomフィード)
 ```
 
-`/tag/{タグ名}` は記事に埋め込まれるリンクのURLであり、クリックされることで登録フローが開始されます。`url` パラメーターには登録対象の記事URLを指定します。データ取得には `.json` または `.atom` を使用します。
+`/declare/{タグ名}` は記事に埋め込まれるリンクのURLであり、クリックされることで登録フローが開始されます。`url` パラメーターには登録対象の記事URLを指定します。データ取得には `/tag/{タグ名}.json` または `/feed/{タグ名}.atom` を使用します。
 
 ### JSONレスポンス形式
 
@@ -181,7 +181,7 @@ URLクエリパラメーターとして渡すため、トークンJSONをbase58b
 著者はエンコードされたトークンをタグリンクに含めます。
 
 ```html
-<a href="https://tag.example.com/tag/typescript?url=https://blog.example.org/posts/ts-tips&token=<base58btcエンコードされたトークン>">#TypeScript</a>
+<a href="https://tag.example.com/declare/typescript?url=https://blog.example.org/posts/ts-tips&token=<base58btcエンコードされたトークン>">#TypeScript</a>
 ```
 
 リクエストを受信したタグサーバーは以下をすべて検証します。

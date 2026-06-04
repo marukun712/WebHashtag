@@ -81,7 +81,7 @@ const app = new Elysia();
 app.use(await staticPlugin({ assets: "public", prefix: "" }));
 
 app.get(
-	"/tag/:tag",
+	"/declare/:tag",
 	async ({ params, query, set }) => {
 		const { tag } = params;
 
@@ -165,7 +165,7 @@ app.get(
 			return null;
 		}
 
-		const tagUrl = `https://${SERVER_HOST}/tag/${tag}`;
+		const tagUrl = `https://${SERVER_HOST}/declare/${tag}`;
 		const hasLink = await verifyBacklink(articleUrl, tagUrl);
 		if (!hasLink) {
 			set.status = 403;
